@@ -1,12 +1,14 @@
 async function fetchAndAnalyze() {
     const status = document.getElementById('status');
-    status.innerText = "SCANNING EXPERT ALGORITHMS...";
+    status.innerText = "SCANNING MARKET...";
 
     try {
-        const proxy = "https://api.allorigins.win/get?url=";
-        const target = "https://draw.ar-lottery01.com/WinGo/WinGo_1M/GetHistoryIssuePage.json";
-        const res = await fetch(proxy + encodeURIComponent(target));
-        const json = await res.json();
+        // CORS bypass ke liye proxy use kar rahe hain
+        const targetUrl = "https://draw.ar-lottery01.com/WinGo/WinGo_1M/GetHistoryIssuePage.json";
+        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}&timestamp=${Date.now()}`;
+        
+        const response = await fetch(proxyUrl);
+        const json = await response.json();
         const data = JSON.parse(json.contents);
         
         const list = data.data.list;
@@ -16,28 +18,32 @@ async function fetchAndAnalyze() {
         let finalRes = null;
         let selectedLogic = "NONE";
 
-        // Sabhi 31 logics ko loop mein check karna
+        // Sabhi 31 logics check honge
         for (let i = 1; i <= 31; i++) {
             let result = PatternLogic[`L${i}`](history);
             if (result !== null) {
                 finalRes = result;
-                selectedLogic = "ALGORITHM L" + i;
-                break; // Sahi pattern milte hi ruk jao
+                selectedLogic = "L" + i;
+                break;
             }
         }
 
-        // Final prediction display aur database update
-        document.getElementById('p_res').innerText = finalRes;
+        // Display Update
+        document.getElementById('p_res').innerText = finalRes || "--";
         document.getElementById('p_res').style.color = finalRes === "BIG" ? "#f43f5e" : "#10b981";
-        document.getElementById('p_type').innerText = "SELECTED: " + selectedLogic;
+        document.getElementById('p_type').innerText = "LOGIC: " + selectedLogic;
         document.getElementById('periodDisplay').innerText = "PERIOD: " + nextP;
-        status.innerText = "SCAN SUCCESSFUL";
+        status.innerText = "AUTO SCAN ACTIVE";
 
-        // Database ko data bhejna
+        // Save to Firebase
         saveToDatabase(nextP, finalRes, selectedLogic);
 
     } catch (e) {
-        status.innerText = "CONNECTION ERROR...";
         console.error(e);
+        status.innerText = "FETCH ERROR. RETRYING...";
     }
 }
+
+// Auto Prediction: Har 30 second mein check karega
+setInterval(fetchAndAnalyze, 30000);
+window.onload = fetchAndAnalyze;
