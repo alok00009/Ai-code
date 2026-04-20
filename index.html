@@ -1,20 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOBITA EXPERT V15</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <style>
+        body { background: #020617; font-family: 'Orbitron', sans-serif; color: #10b981; }
+        .card { border: 1px solid #10b981; background: rgba(15, 23, 42, 0.9); box-shadow: 0 0 30px rgba(16, 185, 129, 0.2); }
+    </style>
 </head>
-<body class="bg-slate-950 flex flex-col items-center justify-center min-h-screen text-white">
-    <div class="border border-emerald-500 p-8 rounded-3xl text-center bg-black/40">
-        <h1 class="text-xl font-bold mb-4">NOBITA EXPERT V15</h1>
-        <div id="periodDisplay" class="text-gray-400">PERIOD: LOADING...</div>
-        <div id="p_res" class="text-8xl font-black my-6">--</div>
-        <div id="p_type" class="text-emerald-500/50">WAITING...</div>
-        <p id="status" class="text-[10px] mt-4 text-gray-600">INITIATING AUTO-SCAN...</p>
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div class="card p-8 rounded-3xl w-full max-w-md text-center">
+        <h1 class="text-xl font-bold mb-6 text-white tracking-widest uppercase">Expert System V15</h1>
+        
+        <div class="bg-black/50 py-12 rounded-2xl border border-white/5 mb-6">
+            <div id="periodDisplay" class="text-xs text-gray-500 mb-2">PERIOD: LOADING...</div>
+            <div id="p_res" class="text-8xl font-black text-white">--</div>
+            <div id="p_type" class="text-[10px] text-emerald-400/50 mt-6 uppercase">SYSTEM READY</div>
+        </div>
+
+        <p id="status" class="text-[10px] text-gray-600 font-mono italic">SCANNING DATA VIA PROXY...</p>
     </div>
+
     <script src="database.js"></script>
-    <script src="logic.js"></script>
-    <script src="expert_system.js"></script>
+    <script src="expert_logic.js"></script>
 </body>
 </html>
