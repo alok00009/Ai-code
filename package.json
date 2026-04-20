@@ -1,0 +1,13 @@
+{
+  "name": "nobita-neural-ai",
+  "version": "1.0.0",
+  "description": "24/7 Self-Learning Wingo AI",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^11.0.0",
+    "node-fetch": "^2.6.7"
+  }
+}
