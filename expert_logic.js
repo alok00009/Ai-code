@@ -1,5 +1,7 @@
-// --- NOBITA EXPERT LOGIC ENGINE ---
+import { db } from './database.js';
+import { ref, set, push, onValue } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js";
 
+// --- NEW MASTER LOGIC (31 EXPERT ALGORITHMS) ---
 const PatternLogic = {
     L1: (h) => h.slice(0, 5).every(n => n >= 5) ? "BIG" : null,
     L2: (h) => h.slice(0, 5).every(n => n < 5) ? "SMALL" : null,
@@ -34,54 +36,85 @@ const PatternLogic = {
     L31: (h) => h[0] % 2 === 0 && h[1] % 2 === 0 && h[2] % 2 === 0 ? "SMALL" : "BIG"
 };
 
-async function fetchAndAnalyze() {
-    const status = document.getElementById('status');
-    const pRes = document.getElementById('p_res');
-    const pType = document.getElementById('p_type');
-    const periodDisp = document.getElementById('periodDisplay');
+let lastInjectedPeriod = null;
+let currentAPIPeriod = null;
+let currentAPINum = null;
+const userKey = localStorage.getItem('active_key');
 
+// --- API FETCH WITH PROXY (Fixed Data Not Loading) ---
+async function getRealResults() {
     try {
         const target = "https://draw.ar-lottery01.com/WinGo/WinGo_1M/GetHistoryIssuePage.json";
+        // Proxy use kar rahe hain taaki CORS block na ho
         const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(target)}&timestamp=${Date.now()}`;
         
-        const response = await fetch(proxy);
-        const json = await response.json();
-        const data = JSON.parse(json.contents);
+        const res = await fetch(proxy);
+        const json = await res.json();
+        const data = JSON.parse(json.contents); // Proxy data parse
+        return data.data.list;
+    } catch (e) { 
+        console.error("API Fetch Error:", e);
+        return []; 
+    }
+}
+
+// --- AUTO PREDICTION LOGIC WITH 31 ALGORITHMS ---
+async function autoInject(num, period, fullHistory) {
+    const nextIssue = (BigInt(period) + 1n).toString();
+    if (lastInjectedPeriod === nextIssue) return;
+    
+    document.getElementById('aiLoader').classList.remove('hidden');
+    
+    setTimeout(async () => {
+        const historyNums = fullHistory.map(item => parseInt(item.number));
         
-        const list = data.data.list;
-        const history = list.slice(0, 15).map(item => parseInt(item.number));
-        const nextPeriod = (BigInt(list[0].issueNumber) + 1n).toString();
+        // --- LOGIC SELECTOR ---
+        let size = null;
+        let usedLogic = "PROBABILITY";
 
-        let finalRes = null;
-        let logicName = "NONE";
-
-        // Logic Selector Loop
         for (let i = 1; i <= 31; i++) {
-            let res = PatternLogic[`L${i}`](history);
+            let res = PatternLogic[`L${i}`](historyNums);
             if (res !== null) {
-                finalRes = res;
-                logicName = "L" + i;
+                size = res;
+                usedLogic = "L" + i;
                 break;
             }
         }
 
-        // UI Updates
-        if(pRes) {
-            pRes.innerText = finalRes;
-            pRes.style.color = finalRes === "BIG" ? "#ff4444" : "#00ff88";
-        }
-        if(pType) pType.innerText = "SELECTED LOGIC: " + logicName;
-        if(periodDisp) periodDisp.innerText = "PERIOD: " + nextPeriod;
-        if(status) status.innerText = "LIVE SCANNING ACTIVE";
+        if (!size) size = (parseInt(num) % 2 === 0) ? "BIG" : "SMALL";
+        let opNums = (size === "BIG") ? "1, 3, 7" : "2, 4, 6";
 
-        // Firebase Update
-        saveToDatabase(nextPeriod, finalRes, logicName);
+        const historyRef = push(ref(db, `user_history/${userKey}`));
+        await set(historyRef, {
+            period: nextIssue,
+            prediction: size,
+            opNums: opNums,
+            logic: usedLogic, // Konsa logic use hua save karega
+            time: new Date().toLocaleTimeString()
+        });
 
-    } catch (e) {
-        console.error("Error:", e);
-        if(status) status.innerText = "RECONNECTING...";
+        document.getElementById('wRes').innerText = size;
+        document.getElementById('wRes').className = `hacker-font text-8xl ${size === 'BIG' ? 'text-red-500' : 'text-emerald-500'}`;
+        document.getElementById('opNums').innerText = opNums;
+        document.getElementById('aiLoader').classList.add('hidden');
+        
+        lastInjectedPeriod = nextIssue;
+    }, 1500);
+}
+
+// --- SYNC API (No Touch to Structure) ---
+async function syncAPI() {
+    const data = await getRealResults();
+    if(data.length > 0) {
+        currentAPINum = data[0].number;
+        currentAPIPeriod = data[0].issueNumber;
+        
+        const nextLive = (BigInt(currentAPIPeriod) + 1n).toString();
+        document.getElementById("nextPeriod").innerText = "LIVE PERIOD: " + nextLive.slice(-4);
+        
+        // Pass full history to autoInject for 31 logic analysis
+        autoInject(currentAPINum, currentAPIPeriod, data);
     }
 }
 
-setInterval(fetchAndAnalyze, 30000);
-window.onload = fetchAndAnalyze;
+// (Baki loadHistory aur copyHack wahi rahenge)
