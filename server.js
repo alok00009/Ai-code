@@ -87,3 +87,9 @@ async function runNeuralEngine() {
 setInterval(runNeuralEngine, 10000);
 
 console.log("🚀 NOBITA NEURAL ENGINE 24/7 STARTED...");
+const http = require('http');
+http.createServer((req, res) => {
+  res.writeHead(200);
+  res.end('Nobita AI is Alive!');
+}).listen(process.env.PORT || 3000);
+
